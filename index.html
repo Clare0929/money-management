@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="我有多少钱">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>我现在有多少钱</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #e8b430;
+      --accent-dark: #c99a20;
+      --success: #34c759;
+      --danger: #ff3b30;
+      --border: #e5e5ea;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --radius: 16px;
+      --radius-sm: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: 100px;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 16px 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .icon-btn:active { transform: scale(0.92); background: #f0f0f0; }
+
+    /* ── Total Balance ── */
+    .balance-hero {
+      margin: 20px;
+      padding: 28px 24px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-radius: 20px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(26,26,46,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .balance-hero::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 140px; height: 140px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+    }
+    .balance-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: -30px;
+      width: 100px; height: 100px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+    }
+    .balance-label {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+    .balance-amount {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin: 8px 0;
+      position: relative;
+      z-index: 1;
+      font-variant-numeric: tabular-nums;
+      font-family: 'SF Pro Display', -apple-system, 'Helvetica Neue', monospace;
+    }
+    .balance-delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .balance-delta.up {
+      background: rgba(52,199,89,0.2);
+      color: #30d158;
+    }
+    .balance-delta.down {
+      background: rgba(255,59,48,0.2);
+      color: #ff453a;
+    }
+    .balance-delta.neutral {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5);
+    }
+    .balance-date {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Wallets ── */
+    .section {
+      padding: 0 20px;
+      margin-bottom: 16px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .wallet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .wallet-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      transition: transform 0.15s;
+    }
+    .wallet-card:active { transform: scale(0.985); }
+
+    .wallet-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .wallet-icon.wechat  { background: #e8fae3; }
+    .wallet-icon.alipay  { background: #e3f0ff; }
+    .wallet-icon.bank    { background: #fff0e3; }
+    .wallet-icon.cash    { background: #e8f5e9; }
+    .wallet-icon.custom  { background: #f3e8ff; }
+
+    .wallet-info { flex: 1; min-width: 0; }
+    .wallet-name { font-size: 15px; font-weight: 600; }
+    .wallet-pct {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+    .wallet-balance {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .wallet-delete {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .wallet-card:hover .wallet-delete,
+    .wallet-card:active .wallet-delete { opacity: 1; }
+    /* Always show delete on touch devices */
+    @media (hover: none) {
+      .wallet-delete { opacity: 0.4; }
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .empty-icon { font-size: 64px; margin-bottom: 16px; }
+    .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .empty-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,180,48,0.35);
+      transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+    .btn-primary:active { transform: scale(0.97); background: var(--accent-dark); }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+    .btn-secondary:active { background: #f0f0f0; }
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--accent-dark);
+      cursor: pointer;
+      font-weight: 600;
+      -webkit-appearance: none;
+    }
+    .btn-sm:active { background: #f0f0f0; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px;
+      margin-bottom: 16px;
+    }
+
+    /* ── History ── */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .history-item {
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .history-date {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .history-total {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: right;
+    }
+    .history-delta {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .history-delta.up { color: var(--success); }
+    .history-delta.down { color: var(--danger); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .modal-sheet {
+      background: #f5f5f7;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      overflow-y: auto;
+      padding: 24px 20px 40px;
+      animation: slideUp 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .modal-sheet h2 {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #e5e5ea;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 17px;
+      background: var(--card);
+      color: var(--text);
+      -webkit-appearance: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .form-input-row .form-input { flex: 1; }
+
+    .add-wallet-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .add-wallet-row input { flex: 1; }
+
+    .modal-total {
+      text-align: center;
+      padding: 14px;
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      margin: 16px 0;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+    .modal-total strong {
+      font-size: 22px;
+      color: var(--text);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1d1d1f;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    .confirm-dialog {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .confirm-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 280px;
+      text-align: center;
+    }
+    .confirm-box p { margin-bottom: 20px; font-size: 15px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-btns button { flex: 1; padding: 10px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .confirm-cancel { background: #e5e5ea; }
+    .confirm-danger { background: var(--danger); color: #fff; }
+
+    @media (min-width: 500px) {
+      body {
+        max-width: 450px;
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Confirm Dialog Container -->
+  <div id="confirmContainer"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>💰 我有多少钱</h1>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="openHistory()" title="历史记录">📋</button>
+      <button class="icon-btn" onclick="exportData()" title="导出数据">📤</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="mainContent"></div>
+
+  <!-- Bottom Actions -->
+  <div class="btn-row" id="bottomActions" style="display:none;">
+    <button class="btn-primary" onclick="openRecordModal()" style="flex:1;">📝 记录当前存款</button>
+  </div>
+
+  <!-- Record Modal -->
+  <div class="modal-overlay" id="recordModal" style="display:none;">
+    <div class="modal-sheet">
+      <h2>记录存款</h2>
+
+      <div id="walletInputs"></div>
+
+      <div class="add-wallet-row">
+        <input class="form-input" id="newWalletName" placeholder="新钱包名称（如：京东余额）">
+        <button class="btn-sm" onclick="addWalletInput()" style="white-space:nowrap;">+ 添加</button>
+      </div>
+
+      <div class="modal-total">
+        当前总存款
+        <strong id="modalTotal">¥0.00</strong>
+      </div>
+
+      <button class="btn-primary" onclick="saveRecord()">💾 保存</button>
+      <div style="margin-top:10px;">
+        <button class="btn-secondary" onclick="closeRecordModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div class="modal-overlay" id="historyModal" style="display:none;">
+    <div class="modal-sheet">
+      <h2>历史记录</h2>
+      <div id="historyContent"></div>
+      <div style="margin-top:16px;">
+        <button class="btn-secondary" onclick="closeHistory()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Data Layer ───
+    const STORAGE_KEY = 'money_app_snapshots';
+    const WALLETS_KEY = 'money_app_wallets';
+
+    const DEFAULT_WALLETS = ['微信', '支付宝', '银行卡', '现金'];
+
+    function loadSnapshots() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function saveSnapshots(snapshots) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshots));
+    }
+
+    function loadWalletTemplates() {
+      try { return JSON.parse(localStorage.getItem(WALLETS_KEY)) || [...DEFAULT_WALLETS]; }
+      catch { return [...DEFAULT_WALLETS]; }
+    }
+
+    function saveWalletTemplates(wallets) {
+      localStorage.setItem(WALLETS_KEY, JSON.stringify(wallets));
+    }
+
+    function getLatestSnapshot() {
+      const snapshots = loadSnapshots();
+      return snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+    }
+
+    function getPreviousSnapshot() {
+      const snapshots = loadSnapshots();
+      return snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+    }
+
+    // ─── Formatting ───
+    function fmt(n) {
+      return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtDelta(n) {
+      const prefix = n > 0 ? '+' : '';
+      return prefix + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = now - d;
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+
+      if (mins < 1) return '刚刚';
+      if (mins < 60) return mins + '分钟前';
+      if (hours < 24) return hours + '小时前';
+      if (days === 1) return '昨天';
+      if (days < 7) return days + '天前';
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const h = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      if (y === now.getFullYear()) return m + '-' + day + ' ' + h + ':' + min;
+      return y + '-' + m + '-' + day;
+    }
+
+    function daysBetween(iso1, iso2) {
+      const d1 = new Date(iso1);
+      const d2 = new Date(iso2);
+      return Math.max(1, Math.round((d2 - d1) / 86400000));
+    }
+
+    // ─── Toast ───
+    let toastTimer;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    // ─── Confirm Dialog ───
+    function showConfirm(msg, onOk) {
+      const container = document.getElementById('confirmContainer');
+      container.innerHTML = `
+        <div class="confirm-dialog" id="confirmDialog">
+          <div class="confirm-box">
+            <p>${msg}</p>
+            <div class="confirm-btns">
+              <button class="confirm-cancel" onclick="closeConfirm()">取消</button>
+              <button class="confirm-danger" id="confirmOkBtn">确认</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('confirmOkBtn').addEventListener('click', () => {
+        closeConfirm();
+        onOk();
+      });
+      document.getElementById('confirmDialog').addEventListener('click', (e) => {
+        if (e.target.id === 'confirmDialog') closeConfirm();
+      });
+    }
+
+    function closeConfirm() {
+      document.getElementById('confirmContainer').innerHTML = '';
+    }
+
+    // ─── Render Main ───
+    function render() {
+      const current = getLatestSnapshot();
+      const previous = getPreviousSnapshot();
+      const container = document.getElementById('mainContent');
+      const bottomActions = document.getElementById('bottomActions');
+
+      if (!current) {
+        bottomActions.style.display = 'flex';
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🏦</div>
+            <div class="empty-title">还没有存款记录</div>
+            <div class="empty-desc">点击下方按钮，<br>录入你的第一笔存款数据吧</div>
+          </div>
+        `;
+        return;
+      }
+
+      bottomActions.style.display = 'flex';
+
+      // Delta calculation
+      let delta = null;
+      let dailyAvg = null;
+      let deltaType = 'neutral';
+      if (previous) {
+        delta = current.total - previous.total;
+        const days = daysBetween(previous.date, current.date);
+        dailyAvg = delta / days;
+        deltaType = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+      }
+
+      const deltaHtml = delta !== null ? `
+        <div class="balance-delta ${deltaType}">
+          ${delta >= 0 ? '↑' : '↓'} ¥${fmt(Math.abs(delta))}
+          ${dailyAvg !== null ? ` · 日均${delta >= 0 ? '增加' : '消耗'} ¥${fmt(Math.abs(dailyAvg))}` : ''}
+        </div>
+      ` : `<div class="balance-delta neutral">首次记录</div>`;
+
+      const walletHtml = current.wallets.map((w, i) => {
+        const pct = current.total > 0 ? (w.balance / current.total * 100).toFixed(1) : 0;
+        const iconClass = getIconClass(w.name);
+        return `
+          <div class="wallet-card">
+            <div class="wallet-icon ${iconClass}">${getWalletEmoji(w.name, i)}</div>
+            <div class="wallet-info">
+              <div class="wallet-name">${escHtml(w.name)}</div>
+              <div class="wallet-pct">占比 ${pct}%</div>
+            </div>
+            <div class="wallet-balance">¥${fmt(w.balance)}</div>
+            <button class="wallet-delete" onclick="event.stopPropagation(); deleteWallet('${escAttr(w.name)}')" title="删除钱包">×</button>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="balance-hero">
+          <div class="balance-label">💰 现有存款总额</div>
+          <div class="balance-amount">¥${fmt(current.total)}</div>
+          ${deltaHtml}
+          <div class="balance-date">更新于 ${fmtDate(current.date)}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">💳 钱包分布</span>
+          </div>
+          <div class="wallet-list">${walletHtml}</div>
+        </div>
+      `;
+    }
+
+    function getIconClass(name) {
+      if (name.includes('微信')) return 'wechat';
+      if (name.includes('支付宝') || name.includes('支付')) return 'alipay';
+      if (name.includes('银行') || name.includes('卡')) return 'bank';
+      if (name.includes('现金')) return 'cash';
+      return 'custom';
+    }
+
+    function getWalletEmoji(name, idx) {
+      if (name.includes('微信')) return '💬';
+      if (name.includes('支付宝')) return '🔵';
+      if (name.includes('银行') || name.includes('卡')) return '🏦';
+      if (name.includes('现金')) return '💵';
+      return ['📱','💼','🏷️','📦','🪙'][idx % 5];
+    }
+
+    function escHtml(s) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return s.replace(/[&<>"']/g, c => map[c]);
+    }
+
+    function escAttr(s) {
+      return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // ─── Delete wallet from current snapshot ───
+    function deleteWallet(name) {
+      const current = getLatestSnapshot();
+      if (!current) return;
+      if (current.wallets.length <= 1) {
+        showToast('至少保留一个钱包');
+        return;
+      }
+      showConfirm(`确定要从当前记录中删除「${name}」吗？`, () => {
+        const snapshots = loadSnapshots();
+        const last = snapshots[snapshots.length - 1];
+        last.wallets = last.wallets.filter(w => w.name !== name);
+        last.total = last.wallets.reduce((s, w) => s + w.balance, 0);
+        saveSnapshots(snapshots);
+        render();
+        showToast('已删除');
+      });
+    }
+
+    // ─── Record Modal ───
+    function openRecordModal() {
+      const modal = document.getElementById('recordModal');
+      const templates = loadWalletTemplates();
+
+      // Pre-fill from current snapshot if exists
+      const current = getLatestSnapshot();
+      const walletMap = {};
+      if (current) {
+        current.wallets.forEach(w => { walletMap[w.name] = w.balance; });
+      }
+
+      document.getElementById('walletInputs').innerHTML = templates.map((name, i) => `
+        <div class="form-group" id="walletGroup_${i}">
+          <label class="form-label">${escHtml(name)}</label>
+          <div class="form-input-row">
+            <input class="form-input wallet-amount" type="number" step="0.01" min="0"
+                   inputmode="decimal" placeholder="0.00"
+                   data-wallet="${escAttr(name)}"
+                   value="${walletMap[name] !== undefined ? walletMap[name] : ''}"
+                   oninput="updateModalTotal()">
+            ${templates.length > 1 ? `<button class="btn-sm" onclick="removeWalletTemplate('${escAttr(name)}')" style="color:var(--danger);border-color:var(--danger);">删除</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('newWalletName').value = '';
+      modal.style.display = 'flex';
+      updateModalTotal();
+    }
+
+    function closeRecordModal() {
+      document.getElementById('recordModal').style.display = 'none';
+    }
+
+    function addWalletInput() {
+      const input = document.getElementById('newWalletName');
+      const name = input.value.trim();
+      if (!name) { showToast('请输入钱包名称'); return; }
+
+      const templates = loadWalletTemplates();
+      if (templates.includes(name)) { showToast('该钱包已存在'); return; }
+
+      templates.push(name);
+      saveWalletTemplates(templates);
+      input.value = '';
+
+      // Re-render inputs
+      const container = document.getElementById('walletInputs');
+      const current = getLatestSnapshot();
+      const walletMap = {};
+      if (current) { current.wallets.forEach(w => { walletMap[w.name] = w.balance; }); }
+
+      const i = templates.length - 1;
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      div.id = 'walletGroup_' + i;
+      div.innerHTML = `
+        <label class="form-label">${escHtml(name)}</label>
+        <div class="form-input-row">
+          <input class="form-input wallet-amount" type="number" step="0.01" min="0"
+                 inputmode="decimal" placeholder="0.00"
+                 data-wallet="${escAttr(name)}"
+                 oninput="updateModalTotal()">
+          <button class="btn-sm" onclick="removeWalletTemplate('${escAttr(name)}')" style="color:var(--danger);border-color:var(--danger);">删除</button>
+        </div>
+      `;
+      container.appendChild(div);
+      updateModalTotal();
+    }
+
+    function removeWalletTemplate(name) {
+      const templates = loadWalletTemplates();
+      if (templates.length <= 1) { showToast('至少保留一个钱包'); return; }
+      const idx = templates.indexOf(name);
+      if (idx > -1) {
+        templates.splice(idx, 1);
+        saveWalletTemplates(templates);
+      }
+      // Remove from DOM without full re-render to preserve entered values
+      const inputs = document.querySelectorAll('.wallet-amount');
+      for (const inp of inputs) {
+        if (inp.dataset.wallet === name) {
+          inp.closest('.form-group').remove();
+          break;
+        }
+      }
+      updateModalTotal();
+    }
+
+    function updateModalTotal() {
+      const inputs = document.querySelectorAll('.wallet-amount');
+      let total = 0;
+      inputs.forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v >= 0) total += v;
+      });
+      document.getElementById('modalTotal').innerHTML = `
+        当前总存款
+        <strong>¥${fmt(total)}</strong>
+      `;
+    }
+
+    function saveRecord() {
+      const inputs = document.querySelectorAll('.wallet-amount');
+      const wallets = [];
+      let hasEmpty = false;
+
+      inputs.forEach(inp => {
+        const name = inp.dataset.wallet;
+        const raw = inp.value.trim();
+        if (raw === '') {
+          hasEmpty = true;
+          return;
+        }
+        const val = parseFloat(raw);
+        if (!isNaN(val) && val >= 0) {
+          wallets.push({ name, balance: Math.round(val * 100) / 100 });
+        }
+      });
+
+      if (wallets.length === 0) {
+        showToast('请至少录入一个钱包的存款');
+        return;
+      }
+
+      if (hasEmpty) {
+        showToast('请填写所有钱包的金额');
+        return;
+      }
+
+      const total = Math.round(wallets.reduce((s, w) => s + w.balance, 0) * 100) / 100;
+      const snapshot = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        wallets,
+        total,
+      };
+
+      const snapshots = loadSnapshots();
+      snapshots.push(snapshot);
+      saveSnapshots(snapshots);
+
+      closeRecordModal();
+      render();
+      showToast('存款已保存 ✅');
+
+      // Trigger service worker update for PWA
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CACHE_APP' });
+      }
+    }
+
+    // ─── History ───
+    function openHistory() {
+      const snapshots = loadSnapshots();
+      const modal = document.getElementById('historyModal');
+      const content = document.getElementById('historyContent');
+
+      if (snapshots.length === 0) {
+        content.innerHTML = '<div class="empty-state"><div class="empty-title">暂无历史记录</div></div>';
+      } else {
+        const reversed = [...snapshots].reverse();
+        content.innerHTML = reversed.map((s, i) => {
+          const realIdx = snapshots.length - 1 - i;
+          const prev = realIdx > 0 ? snapshots[realIdx - 1] : null;
+          let deltaStr = '';
+          if (prev) {
+            const d = s.total - prev.total;
+            const days = daysBetween(prev.date, s.date);
+            const avg = d / days;
+            const cls = d > 0 ? 'up' : d < 0 ? 'down' : '';
+            deltaStr = `<div class="history-delta ${cls}">${d >= 0 ? '↑' : '↓'} ¥${fmt(Math.abs(d))} · 日均¥${fmt(Math.abs(avg))}</div>`;
+          }
+          return `
+            <div class="history-item">
+              <div>
+                <div class="history-date">${fmtDate(s.date)}</div>
+                <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">
+                  ${s.wallets.map(w => escHtml(w.name) + ' ¥' + fmt(w.balance)).join(' · ')}
+                </div>
+                ${deltaStr}
+              </div>
+              <div class="history-total">¥${fmt(s.total)}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Delete all button
+        content.innerHTML += `
+          <div style="text-align:center;margin-top:16px;">
+            <button class="btn-sm" onclick="clearAllHistory()" style="color:var(--danger);border-color:var(--danger);">🗑 清空所有记录</button>
+          </div>
+        `;
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeHistory() {
+      document.getElementById('historyModal').style.display = 'none';
+      render();
+    }
+
+    function clearAllHistory() {
+      showConfirm('确定要清空所有历史记录吗？此操作不可恢复。', () => {
+        saveSnapshots([]);
+        closeHistory();
+        render();
+        showToast('所有记录已清空');
+      });
+    }
+
+    // ─── Export ───
+    function exportData() {
+      const snapshots = loadSnapshots();
+      if (snapshots.length === 0) {
+        showToast('没有可导出的数据');
+        return;
+      }
+
+      let csv = '日期,钱包,金额,总金额\n';
+      snapshots.forEach(s => {
+        s.wallets.forEach(w => {
+          csv += `${s.date},${w.name},${w.balance},${s.total}\n`;
+        });
+      });
+
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '我的存款记录_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('导出成功 📤');
+    }
+
+    // ─── Modal click-outside close ───
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'recordModal') closeRecordModal();
+      if (e.target.id === 'historyModal') closeHistory();
+    });
+
+    // ─── Init ───
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
