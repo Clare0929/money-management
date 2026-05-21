@@ -198,6 +198,7 @@
     .wallet-icon.alipay  { background: #e3f0ff; }
     .wallet-icon.bank    { background: #fff0e3; }
     .wallet-icon.cash    { background: #e8f5e9; }
+    .wallet-icon.debt    { background: #ffe5e5; }
     .wallet-icon.custom  { background: #f3e8ff; }
 
     .wallet-info { flex: 1; min-width: 0; }
@@ -213,6 +214,7 @@
       font-variant-numeric: tabular-nums;
       text-align: right;
     }
+    .wallet-balance.neg { color: var(--danger); }
     .wallet-delete {
       width: 28px; height: 28px;
       border-radius: 50%;
@@ -512,7 +514,7 @@
       <div id="walletInputs"></div>
 
       <div class="add-wallet-row">
-        <input class="form-input" id="newWalletName" placeholder="新钱包名称（如：京东余额）">
+        <input class="form-input" id="newWalletName" placeholder="新钱包名称（如：信用卡、花呗、京东余额）">
         <button class="btn-sm" onclick="addWalletInput()" style="white-space:nowrap;">+ 添加</button>
       </div>
 
@@ -690,16 +692,24 @@
       ` : `<div class="balance-delta neutral">首次记录</div>`;
 
       const walletHtml = current.wallets.map((w, i) => {
-        const pct = current.total > 0 ? (w.balance / current.total * 100).toFixed(1) : 0;
+        let pctStr;
+        if (current.total === 0 && w.balance === 0) {
+          pctStr = '0%';
+        } else if (current.total === 0) {
+          pctStr = '--';
+        } else {
+          pctStr = (w.balance / current.total * 100).toFixed(1) + '%';
+        }
         const iconClass = getIconClass(w.name);
+        const negClass = w.balance < 0 ? ' neg' : '';
         return `
           <div class="wallet-card">
             <div class="wallet-icon ${iconClass}">${getWalletEmoji(w.name, i)}</div>
             <div class="wallet-info">
               <div class="wallet-name">${escHtml(w.name)}</div>
-              <div class="wallet-pct">占比 ${pct}%</div>
+              <div class="wallet-pct">占比 ${pctStr}</div>
             </div>
-            <div class="wallet-balance">¥${fmt(w.balance)}</div>
+            <div class="wallet-balance${negClass}">¥${fmt(w.balance)}</div>
             <button class="wallet-delete" onclick="event.stopPropagation(); deleteWallet('${escAttr(w.name)}')" title="删除钱包">×</button>
           </div>
         `;
@@ -723,6 +733,7 @@
     }
 
     function getIconClass(name) {
+      if (name.includes('信用卡') || name.includes('欠款') || name.includes('贷款') || name.includes('花呗') || name.includes('白条')) return 'debt';
       if (name.includes('微信')) return 'wechat';
       if (name.includes('支付宝') || name.includes('支付')) return 'alipay';
       if (name.includes('银行') || name.includes('卡')) return 'bank';
@@ -733,6 +744,7 @@
     function getWalletEmoji(name, idx) {
       if (name.includes('微信')) return '💬';
       if (name.includes('支付宝')) return '🔵';
+      if (name.includes('信用卡') || name.includes('欠款') || name.includes('贷款') || name.includes('花呗') || name.includes('白条')) return '💳';
       if (name.includes('银行') || name.includes('卡')) return '🏦';
       if (name.includes('现金')) return '💵';
       return ['📱','💼','🏷️','📦','🪙'][idx % 5];
@@ -782,7 +794,7 @@
         <div class="form-group" id="walletGroup_${i}">
           <label class="form-label">${escHtml(name)}</label>
           <div class="form-input-row">
-            <input class="form-input wallet-amount" type="number" step="0.01" min="0"
+            <input class="form-input wallet-amount" type="number" step="0.01"
                    inputmode="decimal" placeholder="0.00"
                    data-wallet="${escAttr(name)}"
                    value="${walletMap[name] !== undefined ? walletMap[name] : ''}"
@@ -826,7 +838,7 @@
       div.innerHTML = `
         <label class="form-label">${escHtml(name)}</label>
         <div class="form-input-row">
-          <input class="form-input wallet-amount" type="number" step="0.01" min="0"
+          <input class="form-input wallet-amount" type="number" step="0.01"
                  inputmode="decimal" placeholder="0.00"
                  data-wallet="${escAttr(name)}"
                  oninput="updateModalTotal()">
@@ -861,7 +873,7 @@
       let total = 0;
       inputs.forEach(inp => {
         const v = parseFloat(inp.value);
-        if (!isNaN(v) && v >= 0) total += v;
+        if (!isNaN(v)) total += v;
       });
       document.getElementById('modalTotal').innerHTML = `
         当前总存款
@@ -882,7 +894,7 @@
           return;
         }
         const val = parseFloat(raw);
-        if (!isNaN(val) && val >= 0) {
+        if (!isNaN(val)) {
           wallets.push({ name, balance: Math.round(val * 100) / 100 });
         }
       });
