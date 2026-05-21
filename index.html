@@ -794,7 +794,7 @@
         <div class="form-group" id="walletGroup_${i}">
           <label class="form-label">${escHtml(name)}</label>
           <div class="form-input-row">
-            <input class="form-input wallet-amount" type="number" step="0.01"
+            <input class="form-input wallet-amount" type="text"
                    inputmode="decimal" placeholder="0.00"
                    data-wallet="${escAttr(name)}"
                    value="${walletMap[name] !== undefined ? walletMap[name] : ''}"
@@ -838,7 +838,7 @@
       div.innerHTML = `
         <label class="form-label">${escHtml(name)}</label>
         <div class="form-input-row">
-          <input class="form-input wallet-amount" type="number" step="0.01"
+          <input class="form-input wallet-amount" type="text"
                  inputmode="decimal" placeholder="0.00"
                  data-wallet="${escAttr(name)}"
                  oninput="updateModalTotal()">
